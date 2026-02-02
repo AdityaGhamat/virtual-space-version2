@@ -4,9 +4,10 @@ import {
   onRefreshed,
   subscribeTokenRefresh,
 } from "../modules/auth/context/AuthState";
+import { serverLink } from "../modules/game/constants/server";
 
 export const api = axios.create({
-  baseURL: `http://localhost:3000/api`,
+  baseURL: `${serverLink}/api`,
   withCredentials: true,
 });
 

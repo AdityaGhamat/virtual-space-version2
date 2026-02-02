@@ -160,6 +160,7 @@ export class MyGame extends Phaser.Scene {
       otherPlayers.clear();
 
       players.forEach(({ id, username, skin, x, y, room }) => {
+        console.log(skin);
         if (id !== this.socket.id) {
           const safeSkin = "player";
 

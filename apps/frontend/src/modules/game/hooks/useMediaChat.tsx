@@ -93,6 +93,10 @@ export const useMediaChat = (roomId: string) => {
     });
 
     return () => {
+      // ✅ 1. ADD THIS LINE: Tell backend we are leaving
+      console.log("Leaving Video Zone...");
+      socket.emit("leaveRoom");
+
       // Cleanup
       setRemoteStreams([]);
       setIsConnected(false);
@@ -122,7 +126,7 @@ export const useMediaChat = (roomId: string) => {
         const transport = device.createSendTransport(data);
         producerTransportRef.current = transport;
 
-        transport.on("connect", ({ dtlsParameters }, callback, errback) => {
+        transport.on("connect", ({ dtlsParameters }, callback) => {
           socket.emit("connectTransport", {
             transportId: transport.id,
             dtlsParameters,
@@ -130,18 +134,15 @@ export const useMediaChat = (roomId: string) => {
           callback();
         });
 
-        transport.on(
-          "produce",
-          async ({ kind, rtpParameters }, callback, errback) => {
-            socket.emit(
-              "produce",
-              { transportId: transport.id, kind, rtpParameters, roomId },
-              ({ id }: any) => {
-                callback({ id });
-              }
-            );
-          }
-        );
+        transport.on("produce", async ({ kind, rtpParameters }, callback) => {
+          socket.emit(
+            "produce",
+            { transportId: transport.id, kind, rtpParameters, roomId },
+            ({ id }: any) => {
+              callback({ id });
+            }
+          );
+        });
 
         await startMedia();
 
@@ -153,7 +154,7 @@ export const useMediaChat = (roomId: string) => {
           const transport = device.createRecvTransport(data);
           consumerTransportRef.current = transport;
 
-          transport.on("connect", ({ dtlsParameters }, callback, errback) => {
+          transport.on("connect", ({ dtlsParameters }, callback) => {
             socket.emit("connectTransport", {
               transportId: transport.id,
               dtlsParameters,
@@ -161,7 +162,7 @@ export const useMediaChat = (roomId: string) => {
             callback();
           });
 
-          resolve(); // ✅ Resolve only when BOTH transports are ready
+          resolve();
         });
       });
     });
@@ -202,7 +203,6 @@ export const useMediaChat = (roomId: string) => {
     const socket = mediaSocket;
     const transport = consumerTransportRef.current;
 
-    // This guard clause was killing your connection before!
     if (!device || !socket || !transport) {
       console.warn("Consume skipped: Device/Transport not ready");
       return;

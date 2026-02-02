@@ -2,10 +2,11 @@ import type {
   ClientToCommEvents,
   CommToClientEvents,
 } from "./modules/core/types/game";
-import express from "express";
+import express, { Response, Request } from "express";
 import { gameHandler } from "./modules/game/handlers/gameHandler";
 import { commHandler } from "./modules/game/handlers/commHandler";
 import cors from "cors";
+import path from "path";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import apiRoutes from "./routes";
@@ -17,6 +18,13 @@ import { mediaHandler } from "./modules/sfu/handler/mediaHandler";
 const app = express();
 const httpServer = createServer(app);
 
+httpServer.on("connection", (socket) => {
+  socket.on("error", (err) => {
+    if ((err as any).code === "ECONNRESET") return;
+
+    console.error("Socket error:", err);
+  });
+});
 app.use(
   cors({
     origin: "http://localhost:5173",
@@ -37,6 +45,14 @@ const io = new Server<ClientToCommEvents, CommToClientEvents>(httpServer, {
 });
 
 app.use("/api", apiRoutes);
+
+const clientBuildPath = path.join(__dirname, "../../frontend/dist");
+
+app.use(express.static(clientBuildPath));
+
+app.use((req: Request, res: Response) => {
+  res.sendFile(path.resolve(__dirname, "../../frontend/dist/index.html"));
+});
 app.use(errorMiddleware);
 
 gameHandler(io);

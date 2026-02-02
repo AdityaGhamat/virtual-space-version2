@@ -31,22 +31,28 @@ export const mediaHandler = (io: Server) => {
       }
     });
 
+    socket.on("leaveRoom", () => {
+      console.log(`User left room manually: ${socket.id}`);
+      const peer = peers.get(socket.id);
+      if (peer) {
+        peer.transports.forEach((transport) => transport.close());
+        peer.producers.clear();
+        peer.consumers.clear();
+        peer.transports.clear();
+      }
+    });
+
     socket.on("joinRoom", async ({ roomId }, callback) => {
-      // ✅ 1. CRITICAL: Join the Socket.IO room so broadcasts work!
       socket.join(roomId);
 
       try {
         const router = await mediasoupService.getOrCreateRouter(roomId);
 
-        // ✅ 2. Get RTP Capabilities
         const rtpCapabilities = router.rtpCapabilities;
 
-        // ✅ 3. FETCH EXISTING PRODUCERS (So I can see people already in the room)
         const existingProducers: { producerId: string; socketId: string }[] =
           [];
 
-        // Iterate over all connected peers to find producers in this room
-        // Note: In a real production app with Redis, you'd query Redis here.
         mediaNamespace.adapter.rooms.get(roomId)?.forEach((socketId) => {
           if (socketId === socket.id) return; // Skip self
           const peer = peers.get(socketId);
@@ -65,13 +71,11 @@ export const mediaHandler = (io: Server) => {
       }
     });
 
-    // --- STANDARD WEBRTC EVENTS (Create Transport, Connect, Produce, Consume) ---
-
     socket.on("createWebRtcTransport", async ({ roomId }, callback) => {
       try {
         const router = await mediasoupService.getOrCreateRouter(roomId);
         const transport = await router.createWebRtcTransport({
-          listenIps: [{ ip: "0.0.0.0", announcedIp: "192.168.0.107" }], // Change IP in Prod
+          listenIps: [{ ip: "0.0.0.0", announcedIp: "192.168.0.107" }],
           enableUdp: true,
           enableTcp: true,
           preferUdp: true,
