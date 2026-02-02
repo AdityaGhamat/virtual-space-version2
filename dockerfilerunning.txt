@@ -1,0 +1,6 @@
+docker run -d \
+  --name game-container \
+  --env-file apps/backend/.env \
+  -p 3000:3000 \
+  -p 2000-2020:2000-2020/udp \
+  game-app

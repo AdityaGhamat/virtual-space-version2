@@ -74,8 +74,9 @@ export const mediaHandler = (io: Server) => {
     socket.on("createWebRtcTransport", async ({ roomId }, callback) => {
       try {
         const router = await mediasoupService.getOrCreateRouter(roomId);
+        const announcedIp = process.env.ANNOUNCED_IP || "127.0.0.1";
         const transport = await router.createWebRtcTransport({
-          listenIps: [{ ip: "0.0.0.0", announcedIp: "192.168.0.107" }],
+          listenIps: [{ ip: "0.0.0.0", announcedIp }],
           enableUdp: true,
           enableTcp: true,
           preferUdp: true,
