@@ -35,9 +35,8 @@ export class MyGame extends Phaser.Scene {
 
   private playerNameTag?: Phaser.GameObjects.Text;
 
-  // Trackers for current zones
   private currentChatRoom: string | null = null;
-  private currentVideoRoom: string | null = null; // ✅ NEW: Track Video Room
+  private currentVideoRoom: string | null = null;
 
   constructor() {
     super("MyGame");
@@ -177,7 +176,6 @@ export class MyGame extends Phaser.Scene {
             })
             .setOrigin(0.5)
             .setScale(0.5);
-
           otherPlayers.set(id, {
             sprite,
             nameTag,
@@ -234,10 +232,10 @@ export class MyGame extends Phaser.Scene {
 
     this.cameras.main.centerOn(player.sprite.x, player.sprite.y);
 
-    // Local Player Logic
     const playerMoved = movePlayer(pressedKeys, player.sprite);
     if (playerMoved) {
       this.socket.emit("move", { x: player.sprite.x, y: player.sprite.y });
+      console.log(`x:${player.sprite.x} , y:${player.sprite.y}`);
       player.movedLastFrame = true;
     } else if (player.movedLastFrame) {
       this.socket.emit("moveEnd");
@@ -310,11 +308,11 @@ export class MyGame extends Phaser.Scene {
       ) {
         otherPlayer.sprite.x = Phaser.Math.Interpolation.Linear(
           [otherPlayer.sprite.x, otherPlayer.targetX],
-          0.1
+          0.05
         );
         otherPlayer.sprite.y = Phaser.Math.Interpolation.Linear(
           [otherPlayer.sprite.y, otherPlayer.targetY],
-          0.1
+          0.05
         );
         otherPlayer.nameTag.x = otherPlayer.sprite.x;
         otherPlayer.nameTag.y = otherPlayer.sprite.y - 40;

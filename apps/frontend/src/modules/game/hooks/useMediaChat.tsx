@@ -33,7 +33,8 @@ export const useMediaChat = (roomId: string) => {
       const socket = mediaSocket;
       const transport = consumerTransportRef.current;
 
-      if (!device || !socket || !transport) {
+      // Ensure everything is ready before consuming
+      if (!device || !socket || !transport || !device.loaded) {
         console.warn("Consume skipped: Device/Transport not ready");
         return;
       }
@@ -81,7 +82,9 @@ export const useMediaChat = (roomId: string) => {
   );
 
   const startMedia = useCallback(async () => {
-    if (!producerTransportRef.current) return;
+    // If transport is gone, don't try to produce
+    if (!producerTransportRef.current || producerTransportRef.current.closed)
+      return;
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -107,15 +110,23 @@ export const useMediaChat = (roomId: string) => {
       }
     } catch (err) {
       console.error("Media Capture Error:", err);
+      throw err; // Stop the chain if mic/cam fails
     }
   }, []);
 
   const initTransports = useCallback(
-    async (device: mediasoupClient.Device, socket: any) => {
+    async (
+      device: mediasoupClient.Device,
+      socket: any,
+      isMounted: () => boolean
+    ) => {
       return new Promise<void>((resolve) => {
         socket.emit("createWebRtcTransport", { roomId }, async (data: any) => {
           if (data.error)
             return console.error("Create Send Transport Error:", data.error);
+
+          // SAFETY: Stop if component unmounted
+          if (!isMounted()) return;
 
           const transport = device.createSendTransport(data);
           producerTransportRef.current = transport;
@@ -138,7 +149,15 @@ export const useMediaChat = (roomId: string) => {
             );
           });
 
-          await startMedia();
+          try {
+            await startMedia();
+          } catch (e) {
+            console.warn("Media failed, stopping transport init");
+            return;
+          }
+
+          // SAFETY: Stop if unmounted during media selection
+          if (!isMounted()) return;
 
           socket.emit(
             "createWebRtcTransport",
@@ -149,6 +168,9 @@ export const useMediaChat = (roomId: string) => {
                   "Create Recv Transport Error:",
                   data.error
                 );
+
+              // SAFETY: Final check
+              if (!isMounted()) return;
 
               const transport = device.createRecvTransport(data);
               consumerTransportRef.current = transport;
@@ -172,31 +194,44 @@ export const useMediaChat = (roomId: string) => {
 
   useEffect(() => {
     if (!mediaSocket || !roomId) return;
+
+    // 1. Mounted Flag
+    let mounted = true;
     const socket = mediaSocket;
+
+    // Helper to check mounted status inside async callbacks
+    const isMounted = () => mounted;
 
     const initMedia = async () => {
       socket.emit("joinRoom", { roomId }, async (data: any) => {
+        if (!mounted) return;
         if (data.error) return console.error("Join Room Error:", data.error);
 
         try {
           const device = new mediasoupClient.Device();
           await device.load({ routerRtpCapabilities: data.rtpCapabilities });
+
+          if (!mounted) return;
           deviceRef.current = device;
 
-          await initTransports(device, socket);
+          // Pass the isMounted checker down
+          await initTransports(device, socket, isMounted);
+
+          if (!mounted) return;
 
           isReady.current = true;
           setIsConnected(true);
 
           if (data.existingProducers) {
             for (const producer of data.existingProducers) {
+              if (!mounted) break;
               await consume(producer.producerId);
             }
           }
 
           if (pendingProducers.current.length > 0) {
-            console.log("Processing pending:", pendingProducers.current);
             for (const pid of pendingProducers.current) {
+              if (!mounted) break;
               await consume(pid);
             }
             pendingProducers.current = [];
@@ -210,10 +245,13 @@ export const useMediaChat = (roomId: string) => {
     initMedia();
 
     socket.on("newProducer", async ({ producerId }) => {
-      if (isReady.current && consumerTransportRef.current) {
+      if (
+        isReady.current &&
+        consumerTransportRef.current &&
+        !consumerTransportRef.current.closed
+      ) {
         await consume(producerId);
       } else {
-        console.log("Not ready yet, queueing producer:", producerId);
         pendingProducers.current.push(producerId);
       }
     });
@@ -226,6 +264,8 @@ export const useMediaChat = (roomId: string) => {
 
     return () => {
       console.log("Leaving Video Zone...");
+      mounted = false; // <--- The most important line
+
       socket.emit("leaveRoom");
 
       setRemoteStreams([]);
@@ -240,6 +280,9 @@ export const useMediaChat = (roomId: string) => {
 
       if (producerTransportRef.current) producerTransportRef.current.close();
       if (consumerTransportRef.current) consumerTransportRef.current.close();
+
+      // Just nullify the ref
+      deviceRef.current = null;
     };
   }, [mediaSocket, roomId, consume, initTransports]);
 

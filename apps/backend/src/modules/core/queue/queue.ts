@@ -13,30 +13,52 @@ export class Queue {
 
   constructor(queueName: string, url: string = env.QUEUE_URL) {
     this.queueName = queueName;
-    this.url = url;
+
+    this.url = url.includes("?")
+      ? `${url}&heartbeat=60`
+      : `${url}?heartbeat=60`;
+  }
+
+  private resetConnection() {
+    console.warn(`♻️ Resetting connection state for ${this.queueName}...`);
+    this.connection = null;
+    this.channel = null;
   }
 
   public async initConnection(): Promise<void> {
     if (this.connection) return;
 
     try {
+      console.log(`🔌 Connecting to RabbitMQ: ${this.queueName}...`);
       const conn = await amqp.connect(this.url);
+
+      conn.on("error", (err) => {
+        console.error("🔥 AMQP Connection Error:", err.message);
+        this.resetConnection();
+      });
+
+      conn.on("close", () => {
+        console.warn("⚠️ AMQP Connection Closed.");
+        this.resetConnection();
+      });
+
       this.connection = conn;
-
       this.channel = await conn.createChannel();
-      await this.channel.assertQueue(this.queueName, { durable: true });
 
-      console.log(`Connected to: ${this.queueName}`);
+      await this.channel.assertQueue(this.queueName, { durable: true });
+      console.log(`✅ Connected to: ${this.queueName}`);
     } catch (error) {
       console.error("Connection failed:", error);
+      this.resetConnection();
       throw error;
     }
   }
 
   public async getChannel(): Promise<AmqpChannel> {
-    if (!this.channel) {
+    if (!this.connection || !this.channel) {
       await this.initConnection();
     }
+
     if (!this.channel) {
       throw new Error("Channel failed to initialize");
     }
@@ -46,6 +68,7 @@ export class Queue {
   public async sendMessage(message: any): Promise<void> {
     try {
       const channel = await this.getChannel();
+
       await channel.assertQueue(this.queueName, { durable: true });
 
       channel.sendToQueue(
@@ -55,6 +78,7 @@ export class Queue {
       );
       console.log(`Sent to ${this.queueName}:`, message);
     } catch (error) {
+      console.error("Failed to send message:", error);
       throw error;
     }
   }
@@ -66,7 +90,7 @@ export class Queue {
       const channel = await this.getChannel();
       await channel.assertQueue(this.queueName, { durable: true });
 
-      console.log(`Listening on: ${this.queueName}`);
+      console.log(`🎧 Listening on: ${this.queueName}`);
 
       channel.consume(this.queueName, async (msg) => {
         if (msg) {
@@ -80,23 +104,11 @@ export class Queue {
           }
         }
       });
-    } catch (error) {
-      throw error;
-    }
-  }
 
-  public async close(): Promise<void> {
-    try {
-      if (this.channel) {
-        await this.channel.close();
-        console.log("Channel closed");
-      }
-      if (this.connection) {
-        await this.connection.close();
-        console.log("Connection closed");
-      }
+      this.channel?.on("close", () => {
+        console.log("Consumer channel closed");
+      });
     } catch (error) {
-      console.error("Error closing:", error);
       throw error;
     }
   }

@@ -11,11 +11,11 @@ export const spaceshipRooms: SpaceShipRoomType = [
   },
   {
     name: "conference_room",
-    x: -540,
-    y: 55,
-    width: 138,
-    height: 111,
+    x: 96,
+    y: -305,
+    width: 498,
+    height: 456,
     capabilities: ["video_call"],
-    description: "Meeting Room - Test area",
+    description: "Main Conference Hall (Cafeteria)",
   },
 ];
