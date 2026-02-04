@@ -42,6 +42,12 @@ const Lobby = () => {
 
   const handleJoin = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Join Clicked. Status Check:", {
+      roomCode,
+      username: userData?.username,
+      socketConnected: !!gameSocket,
+      socketID: gameSocket?.id,
+    });
     if (!roomCode.trim() || !userData?.username || !gameSocket) return;
     gameSocket.emit("checkRoom", roomCode, ({ exists }: { exists: any }) => {
       if (exists) {

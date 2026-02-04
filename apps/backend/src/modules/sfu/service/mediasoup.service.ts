@@ -26,7 +26,6 @@ class MediasoupService {
   routers: Map<string, types.Router> = new Map();
 
   async init() {
-    // SCALABILITY: Use number of CPUs for production
     const numWorkers =
       process.env.NODE_ENV === "production" ? require("os").cpus().length : 1;
 
@@ -42,7 +41,7 @@ class MediasoupService {
           "rtcp",
         ] as types.WorkerLogTag[],
         rtcMinPort: 10000,
-        rtcMaxPort: 10200, // IMPORTANT: Open these UDP ports in Docker/Firewall
+        rtcMaxPort: 10200,
       });
 
       worker.on("died", () => {
@@ -55,7 +54,6 @@ class MediasoupService {
     console.log(`✅ Mediasoup initialized with ${this.workers.length} workers`);
   }
 
-  // Round-robin strategy for load balancing routers across workers
   getWorker(): types.Worker {
     const worker = this.workers[this.nextWorkerIndex];
     this.nextWorkerIndex = (this.nextWorkerIndex + 1) % this.workers.length;

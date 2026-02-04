@@ -11,7 +11,6 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import apiRoutes from "./routes";
 import { errorMiddleware } from "./modules/core/middleware/errorMiddleware";
-// import { allowedOrigins } from "./modules/core/utility/allowedorigins"; // Not needed if we allow all for dev
 import cookieParser from "cookie-parser";
 import { mediaHandler } from "./modules/sfu/handler/mediaHandler";
 
@@ -38,7 +37,7 @@ app.use(express.urlencoded({ extended: false }));
 
 const io = new Server<ClientToCommEvents, CommToClientEvents>(httpServer, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: "*",
     methods: ["GET", "POST"],
     credentials: true,
   },

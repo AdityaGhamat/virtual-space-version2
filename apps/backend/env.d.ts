@@ -15,6 +15,7 @@ declare global {
       COOKIE_SECRET_KEY: string;
       COOKIE_REFRESH_SECRET: string;
       QUEUE_URL: string;
+      ANNOUNCED_IP: string;
     }
   }
 }

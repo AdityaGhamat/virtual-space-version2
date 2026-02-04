@@ -2,6 +2,8 @@ import { Server, Socket } from "socket.io";
 import { mediasoupService } from "../service/mediasoup.service";
 import { types } from "mediasoup";
 
+import env from "../../core/utility/env";
+
 interface PeerData {
   transports: Map<string, types.WebRtcTransport>;
   producers: Map<string, types.Producer>;
@@ -73,10 +75,14 @@ export const mediaHandler = (io: Server) => {
 
     socket.on("createWebRtcTransport", async ({ roomId }, callback) => {
       try {
+        const ip =
+          process.env.NODE_ENV === "development"
+            ? "192.168.0.107"
+            : env.ANNOUNCED_IP;
         const router = await mediasoupService.getOrCreateRouter(roomId);
-        const announcedIp = process.env.ANNOUNCED_IP || "127.0.0.1";
+        const announcedIp = process.env.ANNOUNCED_IP || "192.168.0.107";
         const transport = await router.createWebRtcTransport({
-          listenIps: [{ ip: "0.0.0.0", announcedIp }],
+          listenIps: [{ ip: "0.0.0.0", announcedIp: ip }],
           enableUdp: true,
           enableTcp: true,
           preferUdp: true,
@@ -113,7 +119,6 @@ export const mediaHandler = (io: Server) => {
           const producer = await transport.produce({ kind, rtpParameters });
           peer.producers.set(producer.id, producer);
 
-          // Notify others
           socket.to(roomId).emit("newProducer", {
             producerId: producer.id,
             socketId: socket.id,
