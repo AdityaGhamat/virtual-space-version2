@@ -40,8 +40,8 @@ class MediasoupService {
           "srtp",
           "rtcp",
         ] as types.WorkerLogTag[],
-        rtcMinPort: 10000,
-        rtcMaxPort: 10200,
+        rtcMinPort: 2000,
+        rtcMaxPort: 2020,
       });
 
       worker.on("died", () => {

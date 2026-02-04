@@ -1,6 +1,5 @@
 import httpServer from "./app";
 import env from "./modules/core/utility/env";
-import ValidEnv from "./modules/core/validation/env";
 import { mediasoupService } from "./modules/sfu/service/mediasoup.service";
 
 async function start() {
