@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router";
 import { signin } from "../api/auth";
 import { CustomToast } from "../../../components/Toast";
 import { useAuth } from "../hooks/useAuth";
+import Seo from "../../../components/Seo";
 
 const SignIn = () => {
   const [formData, setFormData] = useState({ email: "", password: "" });
@@ -54,6 +55,10 @@ const SignIn = () => {
 
   return (
     <div className="min-h-screen bg-indigo-950 flex items-center justify-center p-4 font-mono relative overflow-hidden">
+      <Seo
+        title="Login - System Auth"
+        description="Login to access the virtual space and manage your character."
+      />
       <div
         className="absolute inset-0 opacity-10 pointer-events-none"
         style={{

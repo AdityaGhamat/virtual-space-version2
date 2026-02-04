@@ -7,6 +7,8 @@ import ChatOverlay from "./ChatOverlay";
 import ProximityVideoOverlay from "./ProximityVideoOverlay";
 import { CustomToast } from "../../../components/Toast";
 
+import Seo from "../../../components/Seo";
+
 const GameComponent = () => {
   const { gameSocket, commSocket } = useSocket();
   const gameRef = useRef<Phaser.Game | null>(null);
@@ -54,7 +56,7 @@ const GameComponent = () => {
               className="opacity-50 group-hover:opacity-100 transition-opacity"
             >
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2-2v1"></path>
             </svg>
           </div>
         </div>
@@ -103,15 +105,22 @@ const GameComponent = () => {
     return <div className="text-white">Connecting...</div>;
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-black">
-      <div
-        id="phaser-container"
-        className="absolute inset-0 z-0 w-full h-full"
+    <>
+      <Seo
+        title={`Room ${roomId || "Loading..."} - Virtual Space`}
+        description="Live virtual game session in progress."
       />
 
-      <ChatOverlay username={username} />
-      <ProximityVideoOverlay />
-    </div>
+      <div className="relative w-screen h-screen overflow-hidden bg-black">
+        <div
+          id="phaser-container"
+          className="absolute inset-0 z-0 w-full h-full"
+        />
+
+        <ChatOverlay username={username} />
+        <ProximityVideoOverlay />
+      </div>
+    </>
   );
 };
 
