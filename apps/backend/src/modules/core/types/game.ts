@@ -27,10 +27,9 @@ export interface CommToClientEvents {
     message: string;
     username: string;
     timestamp: number;
-    senderId: string; // [NEW] To identify "My Message" vs "Others"
+    senderId: string;
   }) => void;
 
-  // [NEW] Event to send the list of past messages
   chatHistory: (
     data: Array<{
       id: string;

@@ -6,7 +6,6 @@ import { SKINS, generateMissionName } from "../utils/lobby.utils";
 import { useAuth } from "../modules/auth/hooks/useAuth";
 import ProfileModal from "../modules/auth/components/ProfileModal";
 import { logout, createRoom } from "../modules/auth/api/auth";
-
 import Seo from "../components/Seo";
 
 const Lobby = () => {

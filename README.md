@@ -1,135 +1,148 @@
-# Turborepo starter
+# 🪐 Galactic Lobby - 2D Virtual Space
 
-This Turborepo starter is maintained by the Turborepo core team.
+![Galactic Lobby Demo](./screenshots/demo.png)
 
-## Using this example
+A high-performance, real-time multiplayer "Metaverse" featuring zone-based video conferencing, live chat, and spatial interactions. Inspired by the logic of Gather.town and built with an Among Us aesthetic.
 
-Run the following command:
+## 🔗 Live Demo
 
-```sh
-npx create-turbo@latest
+Experience the virtual space directly:
+
+- **URL:** [https://virtual.adityaghamat.in](https://virtual.adityaghamat.in)
+
+**Test Credentials:**
+
+- **Email:** `test@gmail.com`
+- **Password:** `123456`
+
+---
+
+## 🚀 Key Features
+
+- **Zone-Based Video Calls:** Unlike standard proximity chat, video and audio are managed via "Contextual Zones" (e.g., Cafeteria). Entering a zone auto-connects you to the room's SFU transport.
+- **Real-Time Multiplayer:** Synchronized player movement and animations across all clients using WebSockets.
+- **Scalable Media Streams:** Utilizing an SFU (Selective Forwarding Unit) architecture to handle multiple concurrent video streams without overloading the client's CPU.
+- **Decoupled Chat System:** High-throughput chat events are managed via a message broker (RabbitMQ) to ensure game-loop performance.
+- **Monorepo Architecture:** Clean code separation between backend, frontend, and shared packages using Turborepo.
+
+---
+
+## 🛠 Tech Stack
+
+### Frontend & Game Engine
+
+- **Phaser.js:** Core engine for 2D rendering, physics, and tilemap management.
+- **React:** For UI overlays, authentication forms, and video grid layouts.
+- **Tailwind CSS:** Modern styling for a responsive interface.
+
+### Backend & Real-Time
+
+- **Node.js & TypeScript:** Type-safe backend logic.
+- **Mediasoup:** Professional-grade SFU for low-latency WebRTC media routing.
+- **Socket.io:** Signaling server for game state and WebRTC handshakes.
+- **RabbitMQ:** Message queue for handling background events and chat logs.
+
+### Database & DevOps
+
+- **Drizzle ORM:** For type-safe interactions with PostgreSQL.
+- **PostgreSQL (Neon DB):** Serverless SQL database.
+- **Docker & Docker Compose:** Containerized environment for consistent deployment.
+- **Turborepo:** Orchestrating the monorepo build pipeline.
+
+---
+
+## 🧠 Challenges & Learnings
+
+Building a real-time metaverse is an exercise in high-performance networking.
+
+### 1. The Scaling Wall (P2P vs. SFU)
+
+My first implementation used a standard P2P (Mesh) WebRTC setup. It worked perfectly for two people, but as soon as a third or fourth participant joined, the browser's CPU spiked and the video lagged. I realized that P2P doesn't scale linearly—it multiplies connections.
+
+> **The Fix:** I rebuilt the entire media layer using Mediasoup (SFU). By routing all streams through a central server, I reduced the client-side load, allowing multiple users to join without crashing their browsers.
+
+### 2. Maintaining Game Loop Integrity
+
+Initially, high-frequency events like chat messages and movement updates were fighting for the same resources, causing "micro-stutters" in the game loop.
+
+> **The Fix:** I implemented RabbitMQ to decouple chat events from the main game loop. This ensured that media synchronization and movement remained fluid even during high-throughput chat activity.
+
+---
+
+## 📂 Project Structure
+
+This project uses a Turborepo monorepo structure for maximum modularity:
+
+```plaintext
+.
+├── apps/
+│   ├── backend/       # Node.js + Mediasoup SFU server
+│   └── frontend/      # React + Phaser.js client
+├── packages/
+│   ├── ui/            # Shared UI components
+│   ├── types/         # Shared TypeScript interfaces
+│   ├── config/        # Shared ESLint/TS configs
+│   └── utils/         # Common utility functions
+├── screenshots/       # Project assets and demos
+│   └── demo.png       # Main project screenshot
+├── Dockerfile         # Root Docker configuration
+└── turbo.json         # Turborepo configuration
 ```
 
-## What's inside?
+---
 
-This Turborepo includes the following packages/apps:
+## ⚙️ Environment Configuration
 
-### Apps and Packages
+To run this project locally, create a `.env` file in the `apps/backend` directory.
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+```bash
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/dbname
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+# Authentication & Security
+COOKIE_SECRET_KEY=your_secret_key
+COOKIE_REFRESH_SECRET=your_refresh_secret
 
-### Utilities
+# Networking
+ANNOUNCED_IP=127.0.0.1  # Your public IP or localhost for dev
+PORT=3000
 
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+# Message Queue
+QUEUE_URL=amqp://user:password@rabbitmq:5672
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+---
 
-```
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
+## 🐳 Deployment & Setup
 
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
+### Prerequisites
 
-### Develop
+- Node.js 18+
+- Docker & Docker Compose
+- PostgreSQL instance
 
-To develop all apps and packages, run the following command:
+### Installation & Run
 
-```
-cd my-turborepo
+1. **Clone the repository:**
 
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
+   ```bash
+   git clone [https://github.com/AdityaGhamat/virtual-space-version2.git](https://github.com/AdityaGhamat/virtual-space-version2.git)
+   cd virtual-space-version2
+   ```
 
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
+2. **Setup Environment:**
+   Create the `.env` file in `apps/backend` as shown above.
 
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+3. **Run with Docker Compose:**
 
-```
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
+   ```bash
+   docker-compose up --build
+   ```
 
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
+The application will be available at `http://localhost:3000`.
 
-### Remote Caching
+---
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+## 📜 License
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+This project is licensed under the MIT License.
